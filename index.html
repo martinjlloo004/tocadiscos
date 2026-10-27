@@ -244,9 +244,30 @@
     if (r.status === 401) { store.set("tc_expires", "0"); return; }
     if (r.status === 429) { backoffUntil = Date.now() + (Number(r.headers.get("Retry-After")) || 30) * 1000; return; }
     if (r.status === 403) { setNotice("Spotify no deja leer esta cuenta. Revisa que tu correo esté en Users Management de la app de Spotify."); return; }
-    if (r.status === 204) { apply(null); return; }
-    if (!r.ok) { setNotice("Spotify respondió " + r.status + ". Sigo intentando."); return; }
-    apply(await r.json());
+    if (!r.ok && r.status !== 204) { setNotice("Spotify respondió " + r.status + ". Sigo intentando."); return; }
+    const j = r.status === 204 ? null : await r.json().catch(() => null);
+    if (j && j.item) { apply(j); return; }
+    // sin canción: se pregunta también por el estado del reproductor, que a veces sí la trae
+    await fallback(token, r.status, j);
+  }
+
+  async function fallback(token, cpStatus, cp) {
+    let p = null, ps = 0;
+    try {
+      const r = await fetch("https://api.spotify.com/v1/me/player?additional_types=episode", {
+        headers: { Authorization: "Bearer " + token },
+      });
+      ps = r.status;
+      if (r.status === 200) p = await r.json().catch(() => null);
+    } catch {}
+    if (p && p.item) { apply(p); return; }
+    apply(null);
+    const d = p && p.device;
+    setNotice("Spotify no reporta canción. Detalle: actual " + cpStatus +
+      (cp ? " tipo " + (cp.currently_playing_type || "?") : "") +
+      ", reproductor " + ps +
+      (d ? " en " + (d.name || "?") + (d.is_private_session ? " (sesión privada)" : "") : " sin dispositivo") +
+      (p ? (p.is_playing ? ", sonando" : ", pausado") : "") + ".");
   }
 
   function parse(j) {
