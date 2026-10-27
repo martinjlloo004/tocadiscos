@@ -116,8 +116,8 @@
   <div class="stage"><canvas id="deck" aria-label="Vinilo girando"></canvas></div>
   <section class="info" aria-live="polite">
     <div class="top">
-      <span class="status"><i class="dot" id="dot"></i><span id="eyebrowText">Tocadiscos</span></span>
-      <span class="clock"><span id="clock">--:--</span> · v4</span>
+      <span class="status"><i class="dot" id="dot"></i><span id="eyebrowText">Turntable</span></span>
+      <span class="clock"><span id="clock">--:--</span> · v5</span>
     </div>
     <h1 id="title">Tu música, girando</h1>
     <p class="artist" id="artist">Conecta tu Spotify para ver lo que suena</p>
@@ -162,7 +162,7 @@
   const state = { track: null, cover: null, tint: [245, 165, 36] };
 
   // ---------- reloj ----------
-  const clockFmt = new Intl.DateTimeFormat("es-CO", { weekday: "short", hour: "2-digit", minute: "2-digit" });
+  const clockFmt = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   const tickClock = () => { $("clock").textContent = clockFmt.format(new Date()); };
   tickClock(); setInterval(tickClock, 15000);
 
@@ -293,7 +293,7 @@
     setNotice("");
     if (!t) {
       if (state.track) state.track = { ...state.track, playing: false, progress: estProgress(), at: Date.now() };
-      $("eyebrowText").textContent = "En silencio";
+      $("eyebrowText").textContent = "Nothing playing";
       $("dot").classList.remove("live");
       if (!state.track) {
         $("title").textContent = "Nada sonando";
@@ -304,7 +304,7 @@
     }
     const changed = !state.track || state.track.id !== t.id;
     state.track = { ...t, at: Date.now() };
-    $("eyebrowText").textContent = t.playing ? "Sonando ahora" : "En pausa";
+    $("eyebrowText").textContent = t.playing ? "Now playing" : "Paused";
     $("dot").classList.toggle("live", t.playing);
     $("total").textContent = fmt(t.duration);
     if (changed) {
